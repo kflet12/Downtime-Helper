@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="DT Codes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#eef0ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141c21" media="(prefers-color-scheme: dark)">
+<title>Downtime code finder</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eef0ee;--card:#fff;--ink:#1c2a33;--mute:#5b6b75;--line:#c9d1d4;--prod:#2d6a4f;--inj:#1d5f8a;--acc:var(--prod)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141c21;--card:#1e2a31;--ink:#e6ecef;--mute:#9aabb5;--line:#34444d;--prod:#6fcf9b;--inj:#6bb6e8}}
+:root[data-theme="dark"]{--bg:#141c21;--card:#1e2a31;--ink:#e6ecef;--mute:#9aabb5;--line:#34444d;--prod:#6fcf9b;--inj:#6bb6e8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.25rem;margin:0 0 4px;font-weight:650}
+.sub{color:var(--mute);margin:0 0 20px}
+.crumb{color:var(--mute);font-size:.88rem;margin:0 0 14px;min-height:1.3em}
+.q{font-size:1.2rem;font-weight:650;margin:0 0 14px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.opt{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--acc);border-radius:4px;padding:12px 14px;margin:0 0 10px}
+.opt:hover{border-color:var(--acc)}
+.opt b{display:block;font-weight:600}
+.opt span{display:block;color:var(--mute);font-size:.9rem;margin-top:2px}
+.big{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.big button{background:var(--card);border:2px solid var(--line);border-radius:6px;padding:34px 10px;font-size:1.3rem;font-weight:650}
+.big .p{border-color:var(--prod);color:var(--prod)}
+.big .i{border-color:var(--inj);color:var(--inj)}
+.big button:hover{background:var(--bg)}
+.nav{display:flex;gap:10px;margin-top:18px}
+.nav button{background:none;border:1px solid var(--line);border-radius:4px;padding:8px 14px}
+.res{background:var(--card);border:1px solid var(--line);border-top:6px solid var(--acc);border-radius:4px;padding:18px}
+.num{font-size:3rem;line-height:1;font-weight:700;color:var(--acc);margin:0}
+.full{font-size:1.1rem;font-weight:600;margin:8px 0 14px;overflow-wrap:anywhere}
+.res h2{font-size:.95rem;margin:14px 0 2px;color:var(--mute);font-weight:600}
+.res p{margin:0}
+.copy{margin-top:16px;background:var(--acc);color:#fff;border:0;border-radius:4px;padding:9px 16px;font-weight:600}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .copy{color:#10181c}}
+#s{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin:0 0 16px}
+#s:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.tag{display:inline-block;font-size:.8rem;color:var(--mute);border:1px solid var(--line);border-radius:3px;padding:0 6px;margin-left:8px;font-weight:400}
+.opt .code{font-weight:700;margin-right:8px}
+@media (max-width:420px){.big button{padding:26px 8px;font-size:1.1rem}}
+</style>
+</head>
+<body>
+<main>
+<h1>Downtime code finder</h1>
+<p class="sub" id="sub">Pick the well type, then answer each question.</p>
+<input id="s" type="search" placeholder="Search codes: acid, relax formation…" autocomplete="off" aria-label="Search downtime codes">
+<div class="crumb" id="crumb"></div>
+<div id="app"></div>
+</main>
+<script>
+const C={
+"01":["ELECTRIC/SOURCE","Overhead or source interruption","Power unavailable in the distribution system up to the well or facility; includes anything needing a line crew.","Lease-wide outage, overhead line down, transformer down."],
+"02":["ELECTRIC/AUTOMTN","Automation or communication","Communication, PLC or automation equipment keeps the well non-functional; IET, automation or comms repair.","PLC not functioning, VFD failure, ESP tech call-out, RPC failure."],
+"03":["ELECTRIC/LOCAL","Local electrical","Electrical equipment at the well is not working; needs an electrician.","Pumping unit motor repair, HOA switch."],
+"04":["LIFT/REPAIR","Artificial lift repair","Well down from a failure in the non-electrical surface portion of artificial lift.","Wrist pin, belts, cratered unit, leaking stuffing box, broken or pitted polish rod."],
+"05":["LIFT/ELECTIVE","Artificial lift elective","Well down to change production parameters.","Change stroke length, swap or upsize unit, balance unit, lube crew or unit PM."],
+"06":["GATHSYS/REPAIR","Gathering system repair","Repair of the distribution system from wellhead to primary handling facility.","Flowline leak; wellhead, valves, flanges, meters, headers, API ring."],
+"07":["GATHSYS/PLUGGED","Gathering system/flowlines plugged","Distribution system is mechanically sound but plugged.","Plugged flowline, not leaking."],
+"08":["SURFCNST/SUPPLY","Constrained fluid supply","Well down for lack of injection material at the wellhead.","Injection pump down, steam generator down."],
+"09":["SURFCNST/GASPLANT","Gas plant","Constraint from gas plant, compression or gas processing.","Compressor station down, gas plant turnaround."],
+"10":["SURFCNST/PRCSSING","Constrained fluid handling/processing","Constraint in ability to process water, steam or gas.","Planned or unplanned tank farm shutdown, water plant down, disposal constraints."],
+"11":["REGSAFE/DISASTER","Natural disaster","Bad weather shuts the well in, preventative or reactive.","Flooding, hill collapse, storm, fire, landslide."],
+"12":["REGSAFE/REGDOWN","Regulation","Shut in by regulation related to location or surface.","SB1137, birds’ nest, fugitive emissions."],
+"13":["REGSAFE/SAFETY","Safety","Shut in for a safety concern related to location or surface.","High pressure, high temperature, lack of containment, shallow heat."],
+"14":["TRBLSHOT","Troubleshooting","Well initially down-coded for a suspected subsurface failure and sent to operator or check-out crew, before a rig is on the well.","Operator troubleshooting, check-out crew diagnosing, cause unclear and under investigation."],
+"18":["OFFSET/ABANDON","Offset abandonment activity","Completion shut in because of abandonment of a nearby facility or well.","Shut in preventatively or due to communication."],
+"19":["OFFSET/DRILL","Offset drilling activity","Completion shut in because of drilling activity for a new well.","Shut in during offset drilling, preventatively or due to communication."],
+"20":["OFFSET/WORKOVER","Offset workover activity","Completion shut in because of workover or maintenance on a nearby well.","Shut in during offset workover or maintenance."],
+"21":["DHMAINT/DOWNFAIL","Downhole equipment failure","Subsurface equipment needs repair; wellbore integrity is good.","Tubing hole, packer failure, rod part, pump failure, sanded, worn or stuck pump, downhole ESP failure. Repairs not requiring a permit."],
+"22":["DHMAINT/INFLOW","Downhole lack of inflow/outflow","Completion interval is completely plugged, preventing injection or production.","Acid job, wellbore cleanout, acid flowback, plugged off, high injection pressure / won’t take rate."],
+"23":["WORKOVER","Workover","Well shut in to modify the lift mechanism and optimize the wellbore.","Lift conversion, add pay or perfs, liner repair, casing repair, plug back, reperf, all permitted downhole repairs."],
+"24":["REGSAFE/FAILTEST","Failed testing","Completion must be shut in after a failed regulatory test.","Fails MIT or SAPT; shut in until resolved (variance, exemption, resurvey, repair)."],
+"25":["REGSAFE/TESTING","Testing","Completion shut in for any subsurface testing.","MIT or pressure falloff, including cool-off or wait time; DST and bottom hole surveys."],
+"26":["DHMAINT/EVALENG","Well engineering evaluation","Well misses the preliminary economic hurdle or needs mechanical evaluation by a Well Engineer.","High-failure well that doesn’t meet repair economics; sanding well with suspected casing damage."],
+"31":["RESMGMT/VOIDAGE","Voidage","Capable producer shut in for voidage management.","Insufficient injection in a zone, preventing subsidence, shut-in for pressure control (voidage replacement)."],
+"32":["RESMGMT/PTNMGMT","Pattern management","Capable wells shut in for improved sweep or other EOR pattern needs.","Producer shut in for pressure control, injector shut in to avoid watering out an adjacent producer, high WOR producer, injector relaxing formations."],
+"33":["RTE","Refer to engineering","Well needs evaluation by a Reservoir Engineer.","Collapsed or suspected damaged casing with no viable plan; needs sidetrack or recompletion assessment."],
+"34":["UNEC/DEPLETED","Release, depleted","Down well no longer economic; engineering finds low production from depleted reserves. Released to P&A.","Producer with little mechanical damage no longer pays for maintenance; injector no longer adds ultimate recovery."],
+"35":["UNEC/HOLD","Hold, future potential","Down well uneconomic now but has future potential for injection, production or observation.","Fails current economic threshold but could pass at higher prices; recompletion or sidetrack potential."],
+"36":["UNEC/UNECCYCL","Cycle well","Capable well managed by RMT with no plan to return to service within 7 months, cycled on periodically for short runs.","High WOR well turned on monthly to flush oil; intermittent flowing wells."],
+"37":["UNEC/DAMAGE","Release, wellbore damage","Down well uneconomic because of severe wellbore or completion damage. Released to P&A.","Collapsed casing, shallow hole, not economically repairable."]
+};
+// option: [label, hint, target (node id or 2-digit code), only ("p"|"i")]
+const N={
+root:{q:"Where is the problem?",o:[
+["Power, controls or electrical","Power outage, PLC/VFD, motor, switches","elec"],
+["Surface equipment or facilities","Pumping unit, flowline, fluid supply, plant constraints","surf"],
+["Downhole or wellbore","Equipment failure, plugged completion, workover, testing","dh"],
+["Regulatory, safety or weather","Natural disaster, regulation, safety, failed test","reg"],
+["Nearby well or facility activity","Offset drilling, abandonment or workover","off"],
+["Reservoir management or economics","Voidage, patterns, uneconomic, refer to engineering","res"],
+["Cause not known yet","Sent to operator or check-out crew before a rig is on the well","14"]]},
+elec:{q:"What is out of service?",o:[
+["Utility power or overhead line","Lease-wide outage, line down, transformer down; needs a line crew","01"],
+["PLC, VFD, communication or automation","Needs IET, automation or comms repair; ESP tech call-out, RPC failure","02"],
+["Electrical equipment at the well","Pumping unit motor, HOA switch; needs an electrician","03"]]},
+surf:{q:"Which part of the surface system?",o:[
+["Pumping unit (non-electrical)","Belts, wrist pin, polish rod, stuffing box, unit PM","lift","p"],
+["Flowline or gathering system","Wellhead to the primary handling facility","gath"],
+["Fluid supply or facility constraint","Injection pump, steam generator, gas plant, tank farm, water plant","cons"]]},
+lift:{q:"Is it a failure or a planned stop?",o:[
+["Failure","Wrist pin, belts, cratered unit, leaking stuffing box, broken polish rod","04"],
+["Planned change","Change stroke length, swap or upsize unit, balance unit, lube crew or unit PM","05"]]},
+gath:{q:"What is wrong with the flowline?",o:[
+["Leak or damaged equipment","Flowline leak; valves, flanges, meters, headers, API ring","06"],
+["Plugged but not leaking","The system is mechanically sound","07"]]},
+cons:{q:"What is the constraint?",o:[
+["No injection fluid at the wellhead","Injection pump down, steam generator down","08","i"],
+["Gas plant or compression","Compressor station down, gas plant turnaround","09"],
+["Fluid handling or processing","Tank farm shutdown, water plant down, disposal constraints","10"]]},
+dh:{q:"What is happening downhole?",o:[
+["Downhole equipment failed","Wellbore integrity is good: tubing hole, packer, rod part, pump, sanded, ESP","21"],
+["Completion plugged or won’t flow","Acid job, cleanout, acid flowback, high injection pressure, won’t take rate","22"],
+["Rig work or permitted repair","Lift conversion, add perfs, reperf, liner or casing repair, plug back","23"],
+["Failed a regulatory test","MIT or SAPT fail, shut in until resolved","24"],
+["Testing","MIT, pressure falloff, DST or bottom hole survey, cool-off time","25"],
+["Needs well engineer evaluation","High-failure well that misses the repair hurdle, suspected casing damage","26"]]},
+reg:{q:"What is the reason?",o:[
+["Natural disaster","Flood, storm, fire, landslide, hill collapse","11"],
+["Regulation","SB1137, birds’ nest, fugitive emissions","12"],
+["Safety concern at the location or surface","High pressure or temperature, lack of containment, shallow heat","13"],
+["Failed a regulatory test","MIT or SAPT fail, shut in until resolved","24"]]},
+off:{q:"What is the offset activity?",o:[
+["Drilling","New well being drilled, preventative or due to communication","19"],
+["Abandonment","Nearby well or facility being abandoned","18"],
+["Workover or maintenance","Nearby well in workover or maintenance","20"]]},
+res:{q:"What is driving the decision?",o:[
+["Needs reservoir engineer evaluation","Suspected casing damage, no viable plan, sidetrack or recompletion assessment","33"],
+["Voidage","Capable producer shut in for insufficient injection, subsidence or pressure control","31","p"],
+["Pattern management","Sweep control, high WOR producer, injector relaxing formations","32"],
+["Uneconomic","Release, hold or cycle decisions","une"]]},
+une:{q:"Which uneconomic situation?",o:[
+["Depleted","Low production from depleted reserves; release to P&A","34"],
+["Wellbore damage","Severe damage, not economically repairable; release to P&A","37"],
+["Hold for future potential","Uneconomic now; could return at higher prices or for recompletion or sidetrack","35"],
+["Cycle well","Capable producer, no return within 7 months, turned on periodically for short runs","36","p"]]}
+};
+const app=document.getElementById("app"),crumb=document.getElementById("crumb"),sub=document.getElementById("sub");
+let type=null,path=[];
+function setType(t){type=t;path=[];document.documentElement.style.setProperty("--acc",t==="p"?"var(--prod)":"var(--inj)");draw();}
+function pick(i){const node=N[cur()];const o=visible(node)[i];path.push({node:cur(),label:o[0],to:o[2]});draw();}
+function cur(){return path.length?path[path.length-1].to:"root";}
+function visible(node){return node.o.filter(o=>!o[3]||o[3]===type);}
+function back(){if(path.length)path.pop();else type=null;draw();}
+function reset(){type=null;path=[];draw();}
+function nav(){return '<div class="nav"><button onclick="back()">Back</button><button onclick="reset()">Start over</button></div>';}
+function draw(){
+  if(query.trim()){drawSearch();return;}
+  drawFlow();
+}
+function drawFlow(){
+  if(!type){
+    crumb.textContent="";sub.textContent="Pick the well type, then answer each question.";
+    app.innerHTML='<p class="q">What type of well is down?</p><div class="big"><button class="p" onclick="setType(\'p\')">Producer</button><button class="i" onclick="setType(\'i\')">Injector</button></div>';
+    return;
+  }
+  sub.textContent="";
+  crumb.textContent=[type==="p"?"Producer":"Injector"].concat(path.map(s=>s.label)).join(" › ");
+  const id=cur();
+  if(/^\d\d$/.test(id)){
+    const c=C[id],full=id+" - "+c[0]+" - "+c[1];
+    app.innerHTML='<div class="res"><p class="num">'+id+'</p><p class="full">'+c[0]+" - "+c[1]+'</p><h2>When to use it</h2><p>'+c[2]+'</p><h2>Examples</h2><p>'+c[3]+'</p><button class="copy" id="cp">Copy code</button></div>'+nav();
+    document.getElementById("cp").onclick=function(){
+      const b=this;
+      try{navigator.clipboard.writeText(full).then(()=>{b.textContent="Copied"},()=>{b.textContent=full});}catch(e){b.textContent=full;}
+    };
+    return;
+  }
+  const node=N[id];
+  app.innerHTML='<p class="q">'+node.q+'</p>'+visible(node).map((o,i)=>'<button class="opt" onclick="pick('+i+')"><b>'+o[0]+'</b><span>'+o[1]+'</span></button>').join("")+nav();
+}
+const ONLY={"04":"p","05":"p","31":"p","36":"p","08":"i"};
+// Shop shorthand: map a search word to code numbers, e.g. ALIAS["word"]=["21","22"];
+const ALIAS={};
+let query="",shown=null;
+function toks(s){return s.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).map(w=>w.replace(/(ing|ed|es|s)$/,"")).filter(Boolean);}
+function score(id,q){
+  const c=C[id],nm=toks(c[0]+" "+c[1]),df=toks(c[2]+" "+c[3]);let s=0;
+  for(const t of q){let h=0;
+    if(nm.some(w=>w.startsWith(t)))h=3;else if(df.some(w=>w.startsWith(t)))h=1;
+    if(!h)return 0;s+=h;}
+  return s;
+}
+function search(){
+  const raw=query.trim().toLowerCase(),q=toks(raw);
+  const ok=id=>!(type&&ONLY[id]&&ONLY[id]!==type);
+  if(ALIAS[raw])return ALIAS[raw].filter(ok);
+  if(/^\d+$/.test(raw))return Object.keys(C).filter(id=>ok(id)&&id.startsWith(raw.padStart(1,"0")));
+  return Object.keys(C).filter(ok).map(id=>[id,score(id,q)]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]||a[0]-b[0]).map(x=>x[0]);
+}
+function openCode(id){shown=id;draw();}
+function closeCode(){shown=null;draw();}
+function drawSearch(){
+  sub.textContent="";
+  crumb.textContent=type?(type==="p"?"Producer":"Injector")+" results":"All codes";
+  if(shown){
+    const c=C[shown],full=shown+" - "+c[0]+" - "+c[1];
+    app.innerHTML='<div class="res"><p class="num">'+shown+'</p><p class="full">'+c[0]+" - "+c[1]+'</p><h2>When to use it</h2><p>'+c[2]+'</p><h2>Examples</h2><p>'+c[3]+'</p><button class="copy" id="cp">Copy code</button></div><div class="nav"><button onclick="closeCode()">Back to results</button></div>';
+    document.getElementById("cp").onclick=function(){const b=this;try{navigator.clipboard.writeText(full).then(()=>{b.textContent="Copied"},()=>{b.textContent=full});}catch(e){b.textContent=full;}};
+    return;
+  }
+  const r=search();
+  if(!r.length){app.innerHTML='<p class="q">No match</p><p class="sub">Nothing in the code list matches “'+query.trim().replace(/[<>&]/g,"")+'”. Try another word, or clear the search to use the questions.</p>';return;}
+  app.innerHTML='<p class="q">'+r.length+(r.length===1?" possible code":" possible codes")+'</p>'+r.map(id=>{const c=C[id],t=!type&&ONLY[id]?'<span class="tag" style="display:inline">'+(ONLY[id]==="p"?"Producer only":"Injector only")+'</span>':"";return '<button class="opt" onclick="openCode(\''+id+'\')"><b><span class="code">'+id+'</span>'+c[0]+" - "+c[1]+t+'</b><span>'+c[3]+'</span></button>';}).join("");
+}
+document.getElementById("s").addEventListener("input",function(){query=this.value;shown=null;draw();});
+draw();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{});});}
+</script>
+</body>
+</html>
